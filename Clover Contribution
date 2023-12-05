@@ -1,0 +1,220 @@
+warn("executed")
+local plr = game:GetService("Players").LocalPlayer
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local mag, item
+local attackremote = ReplicatedStorage.ReplicatedPackage.Remotes.action
+local mobs = {
+	"Bandit",
+	"Lowly Goblin",
+	"Mage Apprentice",
+	"Ogre",
+	"Shadow Hand Goon",
+	"Seasoned Mercenary",
+	"Alpha Wolf",
+	"Vennum",
+	"Wind Monk",
+	"Wolf",
+	"Wolf Hunter",
+	"Yetti",
+	"---Bosses---",
+	"Grasslands Warlord",
+	"Aetherstone Golem",
+	"Bandit Leader",
+	"Riddlebones",
+	"Wolf Hunter Craftsman",
+}
+
+local Settings = {
+	Autofarm = {
+		Toggle = false,
+		Position = 10,
+		Mob = "",
+	},
+	Autocollect = {
+		Toggle = false,
+		Item = "Rock",
+		Flowers = false,
+	},
+}
+
+local function angle()
+	if Settings.Autofarm.Position >= 0 then
+		return -90
+	else
+		return 90
+	end
+end
+
+local FillerNpcs = {}
+local Quests = {}
+local interactions = {}
+local events = {}
+task.spawn(function()
+if game.PlaceId == 14839995292 then
+	for i, v in next, workspace.Entities.Interactions.FillerNpcs:GetChildren() do
+		table.insert(FillerNpcs, v.Name)
+	end
+
+	for i, v in next, workspace.Entities.Interactions.Quests:GetChildren() do
+		table.insert(Quests, v.Name)
+	end
+
+	for i, v in next, workspace.Entities.Interactions["Special Interactions"]:GetChildren() do
+		table.insert(interactions, v.Name)
+	end
+
+	for i, v in next, workspace.Entities.Interactions.SpecialEvents:GetChildren() do
+		table.insert(events, v.Name)
+	end
+else
+	return
+end
+end)
+
+local function mobfarm()
+	if not Settings.Autofarm.Toggle then
+		return
+	end
+	for i, v in next, workspace.Entities.Enemies:GetChildren() do
+		if v.Humanoid.Health > 0 and v.Name == Settings.Autofarm.Mob then
+			plr.Character.HumanoidRootPart.CFrame = v.HumanoidRootPart.CFrame
+				* CFrame.new(0, Settings.Autofarm.Position, 0)
+				* CFrame.Angles(math.rad(angle()), 0, 0)
+			attackremote:FireServer("M1")
+		end
+	end
+end
+
+local function godmode()
+	ReplicatedStorage.ReplicatedPackage.Remotes.Distance:FireServer(0 / 0, 0 / 0, "High")
+end
+
+
+local function autocollect()
+    warn("start")
+	if not Settings.Autocollect.Toggle then
+		return
+    end
+    for i,v in next, workspace.Entities.Interactions.Collectibles.OreSpawn:GetDescendants() do
+        if v.Name == "OreSpawn" and v:FindFirstChildOfClass("ProximityPrompt") then
+            plr.Character:PivotTo(v:GetPivot())
+			mag = (v.Position - plr.Character.HumanoidRootPart.Position).magnitude
+			if mag < 15 then
+				plr.Character:PivotTo(v:GetPivot())
+                v.ProximityPrompt.HoldDuration = 0
+				fireproximityprompt(v.ProximityPrompt)
+			end
+            break
+        end
+    end
+end
+
+
+
+
+local function flowers()
+	if not Settings.Autocollect.Flowers then
+		return
+	end
+	for i, v in next, workspace.Entities.Interactions.Collectibles.Flowers:GetDescendants() do
+		if v.Name == "Flower" and v:FindFirstChild(Settings.Autocollect.Item) then
+			plr.Character:PivotTo(v:GetPivot())
+			mag = (v.Position - plr.Character.HumanoidRootPart.Position).magnitude
+			if mag < 15 then
+				plr.Character:PivotTo(v:GetPivot())
+                v.ProximityPrompt.HoldDuration = 0
+				fireproximityprompt(v.ProximityPrompt)
+			end
+            break
+		end
+	end
+end
+
+
+
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+local Window = Library.CreateLib("Cover Retribution by Mac#0014", "DarkTheme")
+
+local Tab = Window:NewTab("Main")
+local Section = Tab:NewSection("Main")
+
+Section:NewToggle("Auto Farm Toggle", "ToggleInfo", function(state)
+	Settings.Autofarm.Toggle = state
+end)
+
+Section:NewDropdown("Mob Selection", "", mobs, function(currentOption)
+	Settings.Autofarm.Mob = currentOption
+end)
+
+Section:NewSlider("Position", "", 25, -25, function(s) -- 500 (MaxValue) | 0 (MinValue)
+	Settings.Autofarm.Position = s
+end)
+
+Section:NewToggle("Auto Collect Ores Toggle", "ToggleInfo", function(state)
+	Settings.Autocollect.Toggle = state
+end)
+
+Section:NewToggle("Auto Collect Flowers Toggle", "ToggleInfo", function(state)
+	Settings.Autocollect.Flowers = state
+end)
+
+Section:NewDropdown("Flower Selection", "", { "Blue Lily", "Grass", "Frozen Lily","Fire Lily"}, function(currentOption)
+	Settings.Autocollect.Item = currentOption
+end)
+
+Section:NewButton("Godmode", "", function()
+	godmode()
+end)
+
+local Tab = Window:NewTab("Teleports")
+local Section = Tab:NewSection("Teleports")
+
+Section:NewDropdown("Filler Npcs TP", "", FillerNpcs, function(currentOption)
+	plr.Character:PivotTo(workspace.Entities.Interactions.FillerNpcs[currentOption]:GetPivot())
+end)
+
+Section:NewDropdown("Quests TP", "", Quests, function(currentOption)
+	plr.Character:PivotTo(workspace.Entities.Interactions.Quests[currentOption]:GetPivot())
+end)
+
+Section:NewDropdown("Special Interactions TP", "", interactions, function(currentOption)
+	plr.Character:PivotTo(workspace.Entities.Interactions["Special Interactions"][currentOption]:GetPivot())
+end)
+
+Section:NewDropdown("Special Events TP", "", events, function(currentOption)
+	plr.Character:PivotTo(workspace.Entities.Interactions.SpecialEvents[currentOption]:GetPivot())
+end)
+
+local Tab = Window:NewTab("Settings")
+local Section = Tab:NewSection("Settings")
+
+Section:NewKeybind("Ui Keybind", "", Enum.KeyCode.F, function()
+	Library:ToggleUI()
+end)
+
+local Section = Tab:NewSection("Discord and credits")
+
+Section:NewButton("By Mac#0014", "", function()
+	setclipboard("https://discord.gg/t2cXFpkGBh")
+end)
+
+Section:NewButton("Copy discord invite for updates", "", function()
+	setclipboard("https://discord.gg/t2cXFpkGBh")
+end)
+
+
+
+game:GetService("RunService").Heartbeat:connect(function()
+	task.spawn(function()
+        autocollect()
+        flowers()
+		mobfarm()
+	end)
+end)
+
+game.StarterGui:SetCore("SendNotification", {
+	Title = "Joind discord", -- the title (ofc)
+	Text = "Discord for updates: https://discord.gg/t2cXFpkGBh", -- what the text says (ofc)
+	Icon = "", -- the image if u want.
+	Duration = 20, -- how long the notification should in secounds
+})
