@@ -1,7 +1,8 @@
-warn("executed")
-local plr = game:GetService("Players").LocalPlayer
+
+local players = game:GetService("Players")
+local plr = players.LocalPlayer
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local mag, item
+local mag
 local attackremote = ReplicatedStorage.ReplicatedPackage.Remotes.action
 local mobs = {
 	"Bandit",
@@ -23,6 +24,18 @@ local mobs = {
 	"Riddlebones",
 	"Wolf Hunter Craftsman",
 }
+local bossTable = {
+	"Grasslands Warlord",
+	"Aetherstone Golem",
+	"Bandit Leader",
+	"Riddlebones",
+	"Wolf Hunter Craftsman",
+}
+
+local questTable = {
+
+}
+
 
 local Settings = {
 	Autofarm = {
@@ -35,10 +48,20 @@ local Settings = {
 		Item = "Rock",
 		Flowers = false,
 	},
+	Players = {
+		Toggle = false,
+		Position = 10
+	},
+	Notifier = true,
+	Autoquest = {
+		Toggle = false,
+		Position = 10,
+		Quest = "",
+	},
 }
 
-local function angle()
-	if Settings.Autofarm.Position >= 0 then
+local function angle(number)
+	if number >= 0 then
 		return -90
 	else
 		return 90
@@ -79,7 +102,7 @@ local function mobfarm()
 		if v.Humanoid.Health > 0 and v.Name == Settings.Autofarm.Mob then
 			plr.Character.HumanoidRootPart.CFrame = v.HumanoidRootPart.CFrame
 				* CFrame.new(0, Settings.Autofarm.Position, 0)
-				* CFrame.Angles(math.rad(angle()), 0, 0)
+				* CFrame.Angles(math.rad(angle(Settings.Autofarm.Position)), 0, 0)
 			attackremote:FireServer("M1")
 		end
 	end
@@ -91,7 +114,6 @@ end
 
 
 local function autocollect()
-    warn("start")
 	if not Settings.Autocollect.Toggle then
 		return
     end
@@ -108,9 +130,6 @@ local function autocollect()
         end
     end
 end
-
-
-
 
 local function flowers()
 	if not Settings.Autocollect.Flowers then
@@ -130,6 +149,38 @@ local function flowers()
 	end
 end
 
+local function farmplayers()
+	if not Settings.Players.Toggle then return end;
+	for i,v in next, players:GetChildren() do
+		if v ~= plr and v.Character and v.Character.Humanoid.Health > 0 then
+			plr.Character.HumanoidRootPart.CFrame= v.Character.HumanoidRootPart.CFrame * CFrame.new(0,Settings.Players.Position,0) * CFrame.Angles(math.rad(angle(Settings.Players.Position)),0,0)
+			attackremote:FireServer("M1")
+		end
+	end
+end
+
+local function bossnotifier()
+	if not Settings.Notifier then return end;
+	for i,v in pairs(workspace.Entities.Enemies:GetChildren()) do
+		if bossTable[v.Name] then
+			game.StarterGui:SetCore("SendNotification", {
+				Title = "Boss Spawned:", -- the title (ofc)
+				Text = v.Name, -- what the text says (ofc)
+				Icon = "", -- the image if u want.
+				Duration = 25, -- how long the notification should in secounds
+			})
+		end
+	end
+end
+-- to post an update later ig 
+
+
+local function autoquest()
+	if not Settings.Autoquest.Toggle then return end;
+
+end
+
+
 
 
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
@@ -137,6 +188,15 @@ local Window = Library.CreateLib("Cover Retribution by Mac#0014", "DarkTheme")
 
 local Tab = Window:NewTab("Main")
 local Section = Tab:NewSection("Main")
+
+Section:NewToggle("Farm Players Toggle", "ToggleInfo", function(state)
+	Settings.Players.Toggle = state
+end)
+
+Section:NewSlider("Position", "", 25, -25, function(s) -- 500 (MaxValue) | 0 (MinValue)
+	Settings.Players.Position = s
+end)
+
 
 Section:NewToggle("Auto Farm Toggle", "ToggleInfo", function(state)
 	Settings.Autofarm.Toggle = state
@@ -166,8 +226,12 @@ Section:NewButton("Godmode", "", function()
 	godmode()
 end)
 
-local Tab = Window:NewTab("Teleports")
-local Section = Tab:NewSection("Teleports")
+local Tab = Window:NewTab("Misc")
+local Section = Tab:NewSection("Misc")
+
+Section:NewToggle("Boss Notifier Toggle", "ToggleInfo", function(state)
+	Settings.Notifier = state
+end)
 
 Section:NewDropdown("Filler Npcs TP", "", FillerNpcs, function(currentOption)
 	plr.Character:PivotTo(workspace.Entities.Interactions.FillerNpcs[currentOption]:GetPivot())
@@ -202,13 +266,13 @@ Section:NewButton("Copy discord invite for updates", "", function()
 	setclipboard("https://discord.gg/t2cXFpkGBh")
 end)
 
-
-
 game:GetService("RunService").Heartbeat:connect(function()
 	task.spawn(function()
         autocollect()
         flowers()
 		mobfarm()
+		farmplayers()
+		bossnotifier()
 	end)
 end)
 
@@ -218,3 +282,5 @@ game.StarterGui:SetCore("SendNotification", {
 	Icon = "", -- the image if u want.
 	Duration = 20, -- how long the notification should in secounds
 })
+
+
